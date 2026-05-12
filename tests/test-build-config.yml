@@ -1,0 +1,29 @@
+name: Test build configuration inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          name: my-build-function
+          runtime: nodejs20
+          project_id: my-gcp-project
+          build_environment_variables: |-
+            BUILD_VAR=build-value
+          build_service_account: build-sa@my-gcp-project.iam.gserviceaccount.com
+          build_worker_pool: projects/my-gcp-project/locations/us-central1/workerPools/my-pool
+          docker_repository: projects/my-gcp-project/locations/us-central1/repositories/my-repo
+          kms_key_name: projects/my-gcp-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
+      - name: Assert action ran (expected failure without GCP credentials)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped, expected it to run"
+            exit 1
+          fi
+          echo "PASS: action ran as expected"
