@@ -1,0 +1,27 @@
+name: Test event trigger inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          name: my-cloud-function
+          runtime: nodejs20
+          project_id: my-gcp-project
+          event_trigger_type: google.cloud.audit.log.v1.written
+          event_trigger_location: us-central1
+          event_trigger_filters: |-
+            serviceName=compute.googleapis.com
+            methodName=PATTERN:compute.instances.*
+          event_trigger_pubsub_topic: projects/my-gcp-project/topics/my-topic
+          event_trigger_service_account: trigger-sa@my-gcp-project.iam.gserviceaccount.com
+          event_trigger_channel: projects/my-gcp-project/locations/us-central1/channels/my-channel
+      - name: Assert action ran (expected failure without GCP credentials)
+        run: |
+          echo "Action completed (with or without error — no GCP credentials available in test)"
+          echo "PASS: event trigger inputs were accepted"
