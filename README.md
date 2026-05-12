@@ -10,6 +10,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v3.0.7 | [`v3.0.7`](https://github.com/chainguard-actions/deploy-cloud-functions/tree/v3.0.7) | — |
 | v3.0.8 | [`v3.0.8`](https://github.com/chainguard-actions/deploy-cloud-functions/tree/v3.0.8) | — |
+| v3.0.9 | [`v3.0.9`](https://github.com/chainguard-actions/deploy-cloud-functions/tree/v3.0.9) | — |
 | v4.0.0 | [`v4.0.0`](https://github.com/chainguard-actions/deploy-cloud-functions/tree/v4.0.0) | — |
 
 ## Privacy
