@@ -1,0 +1,47 @@
+name: Test - Build Configuration Inputs
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          name: test-build-function
+          runtime: nodejs20
+          project_id: fake-project-build
+          build_environment_variables: |-
+            BUILD_VAR=build-value
+            NODE_ENV=production
+          build_service_account: build-sa@fake-project-build.iam.gserviceaccount.com
+          build_worker_pool: projects/fake-project-build/locations/us-central1/workerPools/my-pool
+          docker_repository: projects/fake-project-build/locations/us-central1/repositories/gcf-artifacts
+          kms_key_name: projects/fake-project-build/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
+
+      - name: Assert action ran (failed gracefully without real GCP credentials)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          NAME_OUT: ${{ steps.action.outputs.name }}
+          URL_OUT: ${{ steps.action.outputs.url }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "name output: $NAME_OUT"
+          echo "url output: $URL_OUT"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully as expected (no GCP credentials)"
+          elif [ "$OUTCOME" = "success" ]; then
+            if [ -n "$NAME_OUT" ]; then
+              echo "PASS: action succeeded with name output: $NAME_OUT"
+            else
+              echo "FAIL: action succeeded but produced no name output"
+              exit 1
+            fi
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

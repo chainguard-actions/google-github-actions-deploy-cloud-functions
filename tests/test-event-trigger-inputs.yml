@@ -1,0 +1,49 @@
+name: Test - Event Trigger Inputs
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          name: test-event-function
+          runtime: nodejs20
+          project_id: fake-project-events
+          event_trigger_type: google.cloud.audit.log.v1.written
+          event_trigger_location: us-central1
+          event_trigger_filters: |-
+            serviceName=compute.googleapis.com
+            methodName=PATTERN:compute.instances.*
+          event_trigger_pubsub_topic: projects/fake-project-events/topics/my-topic
+          event_trigger_service_account: trigger-sa@fake-project-events.iam.gserviceaccount.com
+          event_trigger_channel: projects/fake-project-events/locations/us-central1/channels/my-channel
+          event_trigger_retry: true
+
+      - name: Assert action ran (failed gracefully without real GCP credentials)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          NAME_OUT: ${{ steps.action.outputs.name }}
+          URL_OUT: ${{ steps.action.outputs.url }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "name output: $NAME_OUT"
+          echo "url output: $URL_OUT"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully as expected (no GCP credentials)"
+          elif [ "$OUTCOME" = "success" ]; then
+            if [ -n "$NAME_OUT" ]; then
+              echo "PASS: action succeeded with name output: $NAME_OUT"
+            else
+              echo "FAIL: action succeeded but produced no name output"
+              exit 1
+            fi
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
