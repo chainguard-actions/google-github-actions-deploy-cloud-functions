@@ -1,4 +1,4 @@
-name: Test event trigger inputs - deploy cloud functions
+name: Test default inputs - deploy cloud functions
 on:
   workflow_dispatch:
 
@@ -10,40 +10,43 @@ jobs:
 
       - name: Create minimal function source
         run: |
-          mkdir -p /tmp/fn-trigger
-          cat > /tmp/fn-trigger/index.js << 'EOF'
-          const functions = require('@google-cloud/functions-framework');
-          functions.cloudEvent('pubsubHandler', (cloudEvent) => {
-            console.log('Received event:', cloudEvent);
-          });
+          mkdir -p /tmp/fn-defaults
+          cat > /tmp/fn-defaults/main.py << 'EOF'
+          import functions_framework
+
+          @functions_framework.http
+          def hello(request):
+              return "Hello!"
           EOF
 
       - id: action
         uses: .
         continue-on-error: true
         with:
-          name: test-trigger-function
-          runtime: nodejs20
-          region: us-central1
-          source_dir: /tmp/fn-trigger
-          event_trigger_type: google.cloud.pubsub.topic.v1.messagePublished
-          event_trigger_pubsub_topic: projects/my-project/topics/my-topic
-          event_trigger_retry: true
-          event_trigger_location: us-central1
+          name: test-defaults-function
+          runtime: python311
+          # region defaults to us-central1
+          # environment defaults to GEN_2
+          # all_traffic_on_latest_revision defaults to true
+          # service_timeout defaults to 60s
+          # ingress_settings defaults to ALLOW_ALL
+          source_dir: /tmp/fn-defaults
 
       - name: Assert action ran and failed gracefully (no GCP credentials)
         env:
           OUTCOME: ${{ steps.action.outcome }}
           OUTPUT_NAME: ${{ steps.action.outputs.name }}
+          OUTPUT_URL: ${{ steps.action.outputs.url }}
         run: |
           echo "outcome: $OUTCOME"
           echo "output name: $OUTPUT_NAME"
+          echo "output url: $OUTPUT_URL"
           if [ "$OUTCOME" = "success" ]; then
             if [ -z "$OUTPUT_NAME" ]; then
               echo "FAIL: action succeeded but name output is empty"
               exit 1
             fi
-            echo "PASS: action succeeded with name=$OUTPUT_NAME"
+            echo "PASS: action succeeded with name=$OUTPUT_NAME url=$OUTPUT_URL"
           elif [ "$OUTCOME" = "failure" ]; then
             echo "PASS: action failed gracefully (no GCP credentials available in harness)"
           else

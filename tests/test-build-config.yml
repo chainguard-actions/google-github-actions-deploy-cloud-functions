@@ -10,21 +10,32 @@ jobs:
         uses: .
         continue-on-error: true
         with:
-          name: my-function
+          name: my-test-function
           runtime: nodejs20
           project_id: my-gcp-project
-          build_environment_variables: |-
-            NODE_ENV=production
-            BUILD_FLAG=true
+          entry_point: helloWorld
           build_service_account: build-sa@my-gcp-project.iam.gserviceaccount.com
           build_worker_pool: projects/my-gcp-project/locations/us-central1/workerPools/my-pool
-          docker_repository: projects/my-gcp-project/locations/us-central1/repositories/gcf-artifacts
-          entry_point: myFunctionHandler
-      - name: Assert action ran (may fail due to missing GCP credentials)
+          docker_repository: projects/my-gcp-project/locations/us-central1/repositories/my-repo
+          kms_key_name: projects/my-gcp-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
+      - name: Assert action ran (outputs set or failed gracefully without GCP credentials)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          NAME_OUT: ${{ steps.action.outputs.name }}
+          URL_OUT: ${{ steps.action.outputs.url }}
         run: |
-          echo "Action outcome: ${{ steps.action.outcome }}"
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: action was skipped unexpectedly"
+          echo "outcome: $OUTCOME"
+          echo "name output: $NAME_OUT"
+          echo "url output: $URL_OUT"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$NAME_OUT" ]; then
+              echo "FAIL: action succeeded but 'name' output is empty"
+              exit 1
+            fi
+            echo "PASS: got name='$NAME_OUT'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no GCP credentials available)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action was invoked"

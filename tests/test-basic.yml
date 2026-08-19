@@ -1,31 +1,50 @@
-name: Test basic usage
+name: Test basic usage - deploy cloud functions
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create minimal function source
+        run: |
+          mkdir -p /tmp/function-src
+          cat > /tmp/function-src/index.js << 'EOF'
+          const functions = require('@google-cloud/functions-framework');
+          functions.http('helloWorld', (req, res) => {
+            res.send('Hello, World!');
+          });
+          EOF
+
       - id: action
         uses: .
         continue-on-error: true
         with:
-          name: my-function
+          name: test-function
           runtime: nodejs20
-          project_id: my-gcp-project
-          description: 'A test Cloud Function'
-          labels: |-
-            env=test
-            team=platform
-          kms_key_name: projects/my-gcp-project/locations/us-central1/keyRings/my-ring/cryptoKeys/my-key
-          vpc_connector: projects/my-gcp-project/locations/us-central1/connectors/my-connector
-      - name: Assert action ran (may fail due to missing GCP credentials)
+          region: us-central1
+          source_dir: /tmp/function-src
+
+      - name: Assert action ran and failed gracefully (no GCP credentials)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          OUTPUT_NAME: ${{ steps.action.outputs.name }}
+          OUTPUT_URL: ${{ steps.action.outputs.url }}
         run: |
-          echo "Action outcome: ${{ steps.action.outcome }}"
-          # The action will fail without real GCP credentials; that is expected.
-          # We only verify the action was invoked (not skipped).
-          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
-            echo "FAIL: action was skipped unexpectedly"
+          echo "outcome: $OUTCOME"
+          echo "output name: $OUTPUT_NAME"
+          echo "output url: $OUTPUT_URL"
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -z "$OUTPUT_NAME" ]; then
+              echo "FAIL: action succeeded but name output is empty"
+              exit 1
+            fi
+            echo "PASS: action succeeded with name=$OUTPUT_NAME"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no GCP credentials available in harness)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action was invoked"
