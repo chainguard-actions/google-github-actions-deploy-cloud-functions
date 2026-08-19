@@ -9,7 +9,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
 | v3.0.7 | [`v3.0.7`](https://github.com/chainguard-actions/google-github-actions-deploy-cloud-functions/tree/v3.0.7) | — |
-| v3.0.8 | [`v3.0.8`](https://github.com/chainguard-actions/google-github-actions-deploy-cloud-functions/tree/v3.0.8) | — |
+| v3.0.8 | [`v3.0.8`](https://github.com/chainguard-actions/google-github-actions-deploy-cloud-functions/tree/v3.0.8) | [`73dd931`](https://github.com/google-github-actions/deploy-cloud-functions/commit/73dd93145271e5b0d75aa195a03c8edf5cc2edad) |
 | v3.0.9 | [`v3.0.9`](https://github.com/chainguard-actions/google-github-actions-deploy-cloud-functions/tree/v3.0.9) | — |
 | v4.0.0 | [`v4.0.0`](https://github.com/chainguard-actions/google-github-actions-deploy-cloud-functions/tree/v4.0.0) | — |
 
