@@ -1,4 +1,4 @@
-name: Test basic usage - deploy cloud function
+name: Test deploy with optional configuration inputs
 on:
   workflow_dispatch:
 
@@ -15,6 +15,21 @@ jobs:
           name: my-test-function
           runtime: nodejs20
           region: us-central1
+          description: 'A test Cloud Function'
+          environment: GEN_2
+          memory: 256M
+          cpu: '1'
+          min_instance_count: '0'
+          max_instance_count: '5'
+          service_timeout: '120s'
+          ingress_settings: ALLOW_ALL
+          all_traffic_on_latest_revision: 'true'
+          environment_variables: |-
+            FOO=bar
+            BAZ=qux
+          labels: |-
+            env=test
+            team=platform
 
       - name: Assert action ran and failed gracefully (no GCP credentials)
         env:
