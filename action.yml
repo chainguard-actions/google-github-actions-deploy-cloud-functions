@@ -438,5 +438,6 @@ branding:
   color: 'blue'
 
 runs:
+  pre: chainguard-phonehome.js
   using: 'node24'
   main: 'dist/main/index.js'

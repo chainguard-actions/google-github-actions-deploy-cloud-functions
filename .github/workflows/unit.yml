@@ -1,0 +1,61 @@
+name: 'Unit'
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**/*'
+  pull_request:
+    branches:
+      - 'main'
+      - 'release/**/*'
+  workflow_dispatch:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+permissions:
+  contents: 'read'
+  id-token: 'write'
+  statuses: 'write'
+
+defaults:
+  run:
+    shell: 'bash'
+jobs:
+  unit:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - 'ubuntu-latest'
+          - 'windows-latest'
+          - 'macos-latest'
+    runs-on: '${{ matrix.os }}'
+
+    steps:
+      - uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+
+      - name: 'npm build'
+        run: 'npm ci && npm run build'
+
+      - id: 'auth'
+        uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # v3
+        if: |-
+          ${{ github.event_name == 'push' || github.repository == github.event.pull_request.head.repo.full_name && github.actor != 'dependabot[bot]' }}
+        with:
+          project_id: '${{ vars.PROJECT_ID }}'
+          workload_identity_provider: '${{ vars.WIF_PROVIDER_NAME }}'
+
+      - name: 'npm test'
+        env:
+          TEST_AUTHENTICATED: '${{ !!steps.auth.outputs.auth_token }}'
+          TEST_PROJECT_ID: '${{ vars.PROJECT_ID }}'
+          TEST_SERVICE_ACCOUNT_EMAIL: '${{ vars.SERVICE_ACCOUNT_EMAIL }}'
+          TEST_SECRET_VERSION_NAME: '${{ vars.SECRET_VERSION_NAME }}'
+        run: 'npm run test'

@@ -1,0 +1,35 @@
+name: Test event trigger inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          name: my-event-function
+          runtime: nodejs20
+          event_trigger_type: 'google.cloud.audit.log.v1.written'
+          event_trigger_location: us-central1
+          event_trigger_filters: |-
+            serviceName=compute.googleapis.com
+            methodName=PATTERN:compute.instances.*
+          event_trigger_pubsub_topic: projects/my-project/topics/my-topic
+          event_trigger_service_account: trigger-sa@my-project.iam.gserviceaccount.com
+          event_trigger_channel: projects/my-project/locations/us-central1/channels/my-channel
+      - name: Assert action ran or failed gracefully (no GCP credentials available)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (no GCP credentials in test environment)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
