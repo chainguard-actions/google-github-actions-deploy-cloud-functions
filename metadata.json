@@ -1,7 +1,0 @@
-{
-  "owner": "google-github-actions",
-  "name": "deploy-cloud-functions",
-  "visibility": "internal",
-  "description": "Use this action to deploy code to Google Cloud Functions.",
-  "block_publish": false
-}
